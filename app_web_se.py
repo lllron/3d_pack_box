@@ -254,7 +254,7 @@ if st.session_state.best_res:
         if st.button("生成 3D 可视化图表 →", type="secondary"):
             with st.spinner("正在绘制 3D 模型..."):
                 fig = draw_placements_interactive(bx, best["placements"])
-                fig.update_layout(height=800, margin=dict(l=0, r=0, b=0, t=40))
+                fig.update_layout(height=500, margin=dict(l=0, r=0, b=0, t=40))
                 st.plotly_chart(fig, use_container_width=True, theme=None)
                 st.caption("💡 提示：按住鼠标左键旋转，右键平移，滚轮缩放。")
         else:
