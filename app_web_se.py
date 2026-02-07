@@ -185,21 +185,60 @@ def draw_placements_interactive(box, placements):
         showlegend=False
     ))
 
-    fig.update_layout(
+    # fig.update_layout( #更适合pc端
+    #     scene=dict(
+    #         xaxis=dict(title="长度 (cm)"),
+    #         yaxis=dict(title="宽度 (cm)"),
+    #         zaxis=dict(title="高度 (cm)"),
+    #         aspectmode="data"
+    #     ),
+    #     title=f"{box.id} - 交互式装箱可视化",
+    #     margin=dict(l=0, r=0, b=0, t=40) # 减少白边，更像 EXE 效果
+    # )
+
+
+
+    fig.update_layout( #适合手机端
         scene=dict(
-            xaxis=dict(title="长度 (cm)"),
-            yaxis=dict(title="宽度 (cm)"),
-            zaxis=dict(title="高度 (cm)"),
+            xaxis=dict(title="L (cm)"),
+            yaxis=dict(title="W (cm)"),
+            zaxis=dict(title="H (cm)"),
             aspectmode="data"
         ),
-        title=f"{box.id} - 交互式装箱可视化",
-        margin=dict(l=0, r=0, b=0, t=40) # 减少白边，更像 EXE 效果
+        title=dict(
+            text=f"{box.id} 方案",
+            x=0.5, # 标题居中
+            font=dict(size=14) # 手机端字体调小一点
+        ),
+        margin=dict(l=0, r=0, b=0, t=30),
+        # 强制设置默认交互模式为轨道旋转
+        dragmode='orbit' 
     )
+
+
 
     return fig # <--- 关键修改：返回 fig 对象而不是直接 show
 
 # ====================== Streamlit 界面 ======================
 st.set_page_config(page_title="装箱计算器", layout="wide")
+# 在 st.set_page_config 之后添加简单的 CSS 强制优化手机端体验
+st.markdown("""
+    <style>
+    /* 调整手机端表格和容器的内边距 */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    /* 让按钮在手机上更大更容易点击 */
+    .stButton>button {
+        width: 100%;
+        height: 3em;
+        border-radius: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 st.title("📦 3D 智能装箱助手")
 
 box_specs = {
@@ -251,11 +290,34 @@ if st.session_state.best_res:
         st.subheader("📦 装箱方案预览")
         
         # 这里的按钮点击后页面会刷新，但因为数据在 session_state 里，所以不会消失
-        if st.button("生成 3D 可视化图表 →", type="secondary"):
+        # if st.button("生成 3D 可视化图表 →", type="secondary"): #适配pc端
+        #     with st.spinner("正在绘制 3D 模型..."):
+        #         fig = draw_placements_interactive(bx, best["placements"])
+        #         fig.update_layout(height=500, margin=dict(l=0, r=0, b=0, t=40))
+        #         st.plotly_chart(fig, use_container_width=True, theme=None)
+        #         st.caption("💡 提示：按住鼠标左键旋转，右键平移，滚轮缩放。")
+        # else:
+        #     st.info("请点击上方按钮加载 3D 交互式视图")
+
+        # 修改后的可视化展示部分
+        if st.button("生成 3D 可视化图表 →", type="secondary"): #适配手机端
             with st.spinner("正在绘制 3D 模型..."):
                 fig = draw_placements_interactive(bx, best["placements"])
-                fig.update_layout(height=500, margin=dict(l=0, r=0, b=0, t=40))
-                st.plotly_chart(fig, use_container_width=True, theme=None)
-                st.caption("💡 提示：按住鼠标左键旋转，右键平移，滚轮缩放。")
+                
+                # 关键优化：
+                # 1. 增加高度，手机端竖屏时需要更多空间
+                # 2. config 里的 scrollZoom 开启滚轮缩放（对应手机双指）
+                st.plotly_chart(
+                    fig, 
+                    use_container_width=True, 
+                    theme=None,
+                    config={
+                        'scrollZoom': True,      # 开启缩放支持
+                        'displayModeBar': True,  # 手机端显示工具栏，方便重置视角
+                        'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
+                        'responsive': True       # 响应式
+                    }
+                )
+                st.info("📱 手机提示：单指旋转，双指捏合缩放，双指拖动平移。")
         else:
             st.info("请点击上方按钮加载 3D 交互式视图")
